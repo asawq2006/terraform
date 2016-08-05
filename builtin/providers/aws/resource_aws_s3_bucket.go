@@ -538,15 +538,18 @@ func resourceAwsS3BucketRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	//read the acceleration status
-	accelerate, err := s3conn.GetBucketAccelerateConfiguration(&s3.GetBucketAccelerateConfigurationInput{
-		Bucket: aws.String(d.Id()),
-	})
-	log.Printf("[DEBUG] S3 bucket: %s, read Acceleration: %v", d.Id(), accelerate)
-	if err != nil {
-		return err
+	s3HostedRegion := meta.(*AWSClient).region
+	if s3HostedRegion != "cn-north-1" && s3HostedRegion != "us-gov-west-1" {
+		//read the acceleration status
+		accelerate, err := s3conn.GetBucketAccelerateConfiguration(&s3.GetBucketAccelerateConfigurationInput{
+			Bucket: aws.String(d.Id()),
+		})
+		log.Printf("[DEBUG] S3 bucket: %s, read Acceleration: %v", d.Id(), accelerate)
+		if err != nil {
+			return err
+		}
+		d.Set("acceleration_status", accelerate.Status)
 	}
-	d.Set("acceleration_status", accelerate.Status)
 
 	// Read the logging configuration
 	logging, err := s3conn.GetBucketLogging(&s3.GetBucketLoggingInput{
